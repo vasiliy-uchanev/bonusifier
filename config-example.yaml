@@ -1,0 +1,6 @@
+token: 1234567890abcdef
+userId: 1234567890abcdef
+team:
+  - alpha
+  - beta
+  - gamma
