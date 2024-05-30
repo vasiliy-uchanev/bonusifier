@@ -13,18 +13,26 @@ function readConfig() {
     const config = YAML.parse(configFile)
 
     const token = config.token
-    const tokenQuery = `access_token=${token}`
+    const tokenHeader = `Bearer ${token}`
     const recipients = config.team
     const userId = config.userId
-    return { tokenQuery, recipients, userId }
+    return { tokenHeader, recipients, userId }
 }
 
-async function getCurrentBalance(userId, tokenQuery) {
-    console.log(userId, tokenQuery)
+async function getCurrentBalance(userId, tokenHeader) {
+    console.log(userId, tokenHeader)
     const getUserResponse = await fetch(
-        `https://bonus.ly/api/v1/users/${userId}?${tokenQuery}`
+        `https://bonus.ly/api/v1/users/${userId}`,
+        {
+            method: 'get',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: tokenHeader,
+            },
+        }
     )
     const userData = await getUserResponse.json()
+    console.log(userData)
     const givingBalance = userData.result.giving_balance
     return givingBalance
 }
@@ -32,10 +40,10 @@ async function getCurrentBalance(userId, tokenQuery) {
 console.log('starting up...')
 
 console.log('reading config...')
-const { tokenQuery, recipients, userId } = readConfig()
+const { tokenHeader, recipients, userId } = readConfig()
 
 console.log('getting user data...')
-const givingBalance = await getCurrentBalance(userId, tokenQuery)
+const givingBalance = await getCurrentBalance(userId, tokenHeader)
 console.log(`giving balance: ${givingBalance}`)
 
 console.log(`calculating bonus amount...`)
@@ -46,7 +54,7 @@ console.log(`remainder: ${remainder}`)
 
 const message = `${recipients
     .map((x) => `@${x}`)
-    .join(' ')} +${amount} Thank you all! #dreamteam`
+    .join(' ')} +${amount} 🚀 #dreamteam`
 console.log('------------------------------------------------------------')
 console.log('MESSAGE:')
 console.log(`${message}`)
@@ -59,11 +67,14 @@ rl.question('Are you ready to send the bonus? (y/n)', async (answer) => {
             reason: message,
         }
         const sendBonusResponse = await fetch(
-            `https://bonus.ly/api/v1/bonuses?${tokenQuery}`,
+            `https://bonus.ly/api/v1/bonuses`,
             {
                 method: 'post',
                 body: JSON.stringify(request),
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: tokenHeader,
+                },
             }
         )
         const data = await sendBonusResponse.json()
